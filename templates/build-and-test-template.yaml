@@ -1,0 +1,11 @@
+apiVersion: argoproj.io/v1alpha1
+kind: WorkflowTemplate
+metadata:
+  name: build-and-test-template
+spec:
+  entrypoint: first-step
+  templates:
+    - name: first-step
+      container:
+        image: alpine:latest
+        command: [echo, "Hello, Argo Workflows!"]

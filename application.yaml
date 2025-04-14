@@ -7,7 +7,7 @@ spec:
   project: default
   source:
     path: templates
-    repoURL: git@github.com:MaxBurgersSkyworkz/Argo-Workflows.git
+    repoURL: https://github.com/MaxBurgersSkyworkz/Argo-Workflows.git
     targetRevision: HEAD
     directory:
       recurse: true

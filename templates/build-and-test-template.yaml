@@ -1,15 +1,19 @@
 apiVersion: argoproj.io/v1alpha1
 kind: WorkflowTemplate
 metadata:
-  name: build-and-test-template
+  name: dotnet-build-test
 spec:
-  entrypoint: first-step
+  entrypoint: build-and-test
   templates:
-    - name: first-step
-      container:
-        image: alpine:latest
-        command: [echo, "Hello, Argo Workflows!"]
-    - name: second-step
-      container:
-        image: alpine:latest
-        command: [echo, "Hello, Argo Workflows!"]
+    - name: build-and-test
+      steps:
+        - - name: checkout-code
+            container:
+              image: alpine/git:latest
+              command: [sh, -c]
+              args:
+                - |
+                  git clone https://github.com/MaxBurgersSkyworkz/ContinuouslyRunningConsole.git .
+                  dotnet restore
+                  dotnet build
+                  dotnet test

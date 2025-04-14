@@ -7,13 +7,15 @@ spec:
   templates:
     - name: build-and-test
       steps:
-        - - name: checkout-code
-            container:
-              image: alpine/git:latest
-              command: [sh, -c]
-              args:
-                - |
-                  git clone https://github.com/MaxBurgersSkyworkz/ContinuouslyRunningConsole.git .
-                  dotnet restore
-                  dotnet build
-                  dotnet test
+        - - name: checkout-and-build
+            template: checkout-and-build-template
+    - name: checkout-and-build-template
+      container:
+        image: alpine/git:latest
+        command: [sh, -c]
+        args:
+          - |
+            git clone https://github.com/MaxBurgersSkyworkz/ContinuouslyRunningConsole.git .
+            dotnet restore
+            dotnet build
+            dotnet test

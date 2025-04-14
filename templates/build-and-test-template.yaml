@@ -48,7 +48,7 @@ spec:
           - "--dockerfile=./repos/ContinuouslyRunningConsole/Dockerfile"
           - "--context=./repos/ContinuouslyRunningConsole"
           - "--destination=267074127319.dkr.ecr.eu-west-1.amazonaws.com/poc-wehkamp:latest"
-      inputs:
-        artifacts:
-          - name: cloned-repo
-            path: ./repos
+        inputs:
+          artifacts:
+            - name: cloned-repo
+              path: ./repos

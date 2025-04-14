@@ -18,6 +18,7 @@ spec:
         args:
           - |
             echo "Installing .NET SDK"
+            ls -a
             # Any further installation steps if needed.
     - name: checkout-and-build-template
       container:

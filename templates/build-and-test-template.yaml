@@ -28,6 +28,7 @@ spec:
           - |
             git clone https://github.com/MaxBurgersSkyworkz/ContinuouslyRunningConsole.git ./repos
             ls -a
+            nuget locals all -clear
             dotnet restore "./repos/ContinuouslyRunningConsole/ContinuouslyRunningConsole.csproj"
             echo "Done restoring!"
             dotnet build "./repos/ContinuouslyRunningConsole/ContinuouslyRunningConsole.csproj"

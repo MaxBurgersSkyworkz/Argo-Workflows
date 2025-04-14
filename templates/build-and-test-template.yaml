@@ -7,26 +7,16 @@ spec:
   templates:
     - name: build-and-test
       steps:
-        - - name: install-dotnet
-            template: install-dotnet-template
         - - name: checkout-and-build
             template: checkout-and-build-template
-    - name: install-dotnet-template
-      container:
-        image: mcr.microsoft.com/dotnet/sdk:8.0 # or desired version
-        command: [sh, -c]
-        args:
-          - |
-            echo "Installing .NET SDK"
-            ls -a
-            # Any further installation steps if needed.
     - name: checkout-and-build-template
       container:
         image: mcr.microsoft.com/dotnet/sdk:8.0 # use same version as install
         command: [sh, -c]
         args:
           - |
-            git clone https://github.com/MaxBurgersSkyworkz/ContinuouslyRunningConsole.git .
-            dotnet restore
-            dotnet build
-            dotnet test
+            git clone https://github.com/MaxBurgersSkyworkz/ContinuouslyRunningConsole.git ./repos
+            ls -a
+            dotnet restore "./repos/ContinuouslyRunningConsole/ContinuouslyRunningConsole.csproj"
+            dotnet build "./repos/ContinuouslyRunningConsole/ContinuouslyRunningConsole.csproj"
+            dotnet test "./repos/ContinuouslyRunningConsole/ContinuouslyRunningConsole.csproj"

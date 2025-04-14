@@ -7,11 +7,21 @@ spec:
   templates:
     - name: build-and-test
       steps:
+        - - name: install-dotnet
+            template: install-dotnet-template
         - - name: checkout-and-build
             template: checkout-and-build-template
+    - name: install-dotnet-template
+      container:
+        image: mcr.microsoft.com/dotnet/sdk:8.0 # or desired version
+        command: [sh, -c]
+        args:
+          - |
+            echo "Installing .NET SDK"
+            # Any further installation steps if needed.
     - name: checkout-and-build-template
       container:
-        image: alpine/git:latest
+        image: mcr.microsoft.com/dotnet/sdk:8.0 # use same version as install
         command: [sh, -c]
         args:
           - |

@@ -39,7 +39,7 @@ spec:
             echo "Done testing!"
     - name: checkout-dockerbuild-dockerpush-template
       container:
-        image: mcr.microsoft.com/dotnet/sdk:8.0
+        image: docker:latest
         command: [sh, -c]
         args:
           - |

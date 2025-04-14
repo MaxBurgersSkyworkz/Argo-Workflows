@@ -9,8 +9,10 @@ spec:
       steps:
         - - name: install-dotnet
             template: install-dotnet-template
-        - - name: checkout-and-build
-            template: checkout-and-build-template
+        - - name: checkout-build-test
+            template: checkout-build-test-template
+        - - name: checkout-dockerbuild-dockerpush
+            template: checkout-dockerbuild-dockerpush-template
     - name: install-dotnet-template
       container:
         image: mcr.microsoft.com/dotnet/sdk:8.0
@@ -20,7 +22,7 @@ spec:
             echo "Installing .NET SDK"
             ls -a
             # Any further installation steps if needed.
-    - name: checkout-and-build-template
+    - name: checkout-build-test-template
       container:
         image: mcr.microsoft.com/dotnet/sdk:8.0
         command: [sh, -c]
@@ -35,3 +37,14 @@ spec:
             echo "Done building!"
             dotnet test "./repos/ContinuouslyRunningConsole/ContinuouslyRunningConsole.csproj"
             echo "Done testing!"
+    - name: checkout-dockerbuild-dockerpush-template
+      container:
+        image: mcr.microsoft.com/dotnet/sdk:8.0
+        command: [sh, -c]
+        args:
+          - |
+            git clone https://github.com/MaxBurgersSkyworkz/ContinuouslyRunningConsole.git ./repos
+            ls -a
+            docker build -t poc-wehkamp ./repos/ContinuouslyRunningConsole
+            docker tag poc-wehkamp:latest 267074127319.dkr.ecr.eu-west-1.amazonaws.com/poc-wehkamp:latest
+            docker push 267074127319.dkr.ecr.eu-west-1.amazonaws.com/poc-wehkamp:latest

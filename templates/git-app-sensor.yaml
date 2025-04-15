@@ -4,8 +4,8 @@ metadata:
   name: github-push-sensor
   namespace: argo-events
 spec:
-  # template:
-  #   serviceAccountName: argo-platform-sa
+  template:
+    serviceAccountName: argo-events-sa
   dependencies:
     - name: github-push-dep
       eventSourceName: github-push
@@ -24,7 +24,7 @@ spec:
               kind: Workflow
               metadata:
                 generateName: hello-world-triggered-
-                # namespace: argo-events
+                namespace: argo
               spec:
                 entrypoint: hello-world
                 templates:

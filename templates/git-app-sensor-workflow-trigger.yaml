@@ -1,7 +1,7 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Sensor
 metadata:
-  name: github-push-sensor
+  name: github-push-sensor-workflow-trigger
   namespace: argo-events
 spec:
   template:

@@ -1,0 +1,82 @@
+apiVersion: argoproj.io/v1alpha1
+kind: WorkflowTemplate
+metadata:
+  name: git-pull-build
+  namespace: argo
+spec:
+  entrypoint: setup-git
+  arguments:
+    parameters:
+    - name: repo_full_name
+    - name: ref 
+      value: ""
+    - name: repo_name
+
+  templates:
+  - name: setup-git
+    dag:
+      tasks:
+        - name: check-repo
+          template: check-repo
+          arguments:
+            parameters:
+              - name: ref
+                value: "{{workflow.parameters.ref}}"
+
+        - name: build-and-push-image
+          dependencies: [check-repo]
+          template: build-and-push-image
+          arguments:
+            parameters:
+              - name: image
+                value: "267074127319.dkr.ecr.eu-west-1.amazonaws.com/poc-wehkamp:{{workflow.parameters.repo_name}}"
+              - name: ref
+                value: "{{workflow.parameters.ref}}"
+
+
+  - name: check-repo
+    inputs:
+        parameters:
+          - name: ref
+        artifacts:
+          - name: repo
+            path: /src
+            git: 
+              repo: https://github.com/{{workflow.parameters.repo_full_name}}.git
+              revision: "{{inputs.parameters.ref}}"
+              usernameSecret:
+                  name: github-secret
+                  key: username
+              passwordSecret:
+                name: github-secret
+                key: token
+    container:
+      image: golang:1.10
+      command: ["sh", "-c"]
+      args: ["git status && ls"]
+      workingDir: /src
+
+  - name: build-and-push-image
+    inputs:
+      parameters:
+        - name: image
+        - name: ref
+      artifacts:
+          - name: repo
+            path: /src
+            git: 
+              repo: https://github.com/{{workflow.parameters.repo_full_name}}.git
+              revision: "{{inputs.parameters.ref}}"
+              usernameSecret:
+                  name: github-secret
+                  key: username
+              passwordSecret:
+                name: github-secret
+                key: token
+    container:
+      image: gcr.io/kaniko-project/executor:latest
+      args:
+        - "--dockerfile=/src/Dockerfile"
+        - "--context=/src"
+        - "--destination={{inputs.parameters.image}}"
+        - "--verbosity=info"

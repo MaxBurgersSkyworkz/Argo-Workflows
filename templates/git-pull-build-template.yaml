@@ -79,7 +79,8 @@ spec:
         - "--dockerfile=/src/Dockerfile"
         - "--context=/src"
         - "--destination={{inputs.parameters.image}}"
-        - "--verbosity=info"
+        - "--verbosity=debug"
+        - "--log-timestamp"
       env:
         - name: AWS_SDK_LOAD_CONFIG
           value: "true"

@@ -80,3 +80,9 @@ spec:
         - "--context=/src"
         - "--destination={{inputs.parameters.image}}"
         - "--verbosity=info"
+      env:
+        - name: AWS_SDK_LOAD_CONFIG
+          value: true
+        - name: AWS_EC2_METADATA_DISABLED
+          value: true
+

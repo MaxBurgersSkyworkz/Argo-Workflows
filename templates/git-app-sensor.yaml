@@ -24,7 +24,7 @@ spec:
               kind: Workflow
               metadata:
                 generateName: hello-world-triggered-
-                namespace: argo
+                namespace: argo-events
               spec:
                 entrypoint: hello-world
                 templates:

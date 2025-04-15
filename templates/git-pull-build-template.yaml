@@ -81,6 +81,7 @@ spec:
         - "--destination={{inputs.parameters.image}}"
         - "--verbosity=debug"
         - "--log-timestamp"
+        - "--insecure"
       env:
         - name: AWS_SDK_LOAD_CONFIG
           value: "true"

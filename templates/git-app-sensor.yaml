@@ -26,7 +26,7 @@ spec:
                 generateName: hello-world-triggered-
                 namespace: argo
               spec:
-                  serviceAccountName: argo-platform-sa
+                serviceAccountName: argo-platform-sa
                 entrypoint: hello-world
                 templates:
                   - name: hello-world

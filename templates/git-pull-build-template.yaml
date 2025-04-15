@@ -29,7 +29,7 @@ spec:
           arguments:
             parameters:
               - name: image
-                value: "267074127319.dkr.ecr.eu-west-1.amazonaws.com/poc-wehkamp:{{workflow.parameters.repo_name}}"
+                value: "267074127319.dkr.ecr.eu-west-1.amazonaws.com/poc-wehkamp:latest" #{{workflow.parameters.repo_name}}
               - name: ref
                 value: "{{workflow.parameters.ref}}"
 

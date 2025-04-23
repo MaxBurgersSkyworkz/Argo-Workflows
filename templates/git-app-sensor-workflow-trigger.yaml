@@ -1,0 +1,37 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Sensor
+metadata:
+  name: github-push-sensor-workflow-trigger
+  namespace: argo-events
+spec:
+  template:
+    serviceAccountName: argo-events-sa
+  dependencies:
+    - name: github-push-dep
+      eventSourceName: github-push
+      eventName: push
+  triggers:
+    - template:
+        name: run-hello-world
+        argoWorkflow:
+          group: argoproj.io
+          version: v1alpha1
+          resource: workflows
+          operation: submit
+          source:
+            resource:
+              apiVersion: argoproj.io/v1alpha1
+              kind: Workflow
+              metadata:
+                generateName: hello-world-triggered-
+                namespace: argo
+              spec:
+                serviceAccountName: argo-platform-sa
+                entrypoint: hello-world
+                templates:
+                  - name: hello-world
+                    container:
+                      image: alpine:latest
+                      command: ["/bin/sh", "-c"]
+                      args: ["echo Hello from this workflow"]
+          parameters: []

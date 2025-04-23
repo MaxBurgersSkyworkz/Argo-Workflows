@@ -1,0 +1,27 @@
+apiVersion: argoproj.io/v1alpha1
+kind: EventSource
+metadata:
+  name: github-push
+  namespace: argo-events
+spec:
+  service:
+    ports:
+      - name: push
+        port: 12000
+        targetPort: 12000
+  github:
+    push:
+      owner: skyworkz
+      repository: poc-wehkamp-app
+      webhook:
+        endpoint: /push
+        port: "12000"
+        method: POST
+        url: "https://4ae5-2a02-a468-477a-1-7901-cdbe-8412-4ac1.ngrok-free.app"
+      events:
+        - push
+      apiToken:
+        name: github-secret
+        key: token
+      insecure: true
+      active: true

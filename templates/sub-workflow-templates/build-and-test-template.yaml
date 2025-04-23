@@ -1,0 +1,26 @@
+apiVersion: argoproj.io/v1alpha1
+kind: WorkflowTemplate
+metadata:
+  name: dotnet-build-test
+spec:
+  entrypoint: build-and-test
+  templates:
+    - name: build-and-test
+      steps:
+        - - name: checkout-build-test
+            template: checkout-build-test-template
+    - name: checkout-build-test-template
+      container:
+        image: mcr.microsoft.com/dotnet/sdk:8.0
+        command: [sh, -c]
+        args:
+          - |
+            git clone https://github.com/MaxBurgersSkyworkz/ContinuouslyRunningConsole.git ./repos
+            ls -a
+            nuget locals all -clear
+            dotnet restore "./repos/ContinuouslyRunningConsole/ContinuouslyRunningConsole.csproj"
+            echo "Done restoring!"
+            dotnet build "./repos/ContinuouslyRunningConsole/ContinuouslyRunningConsole.csproj"
+            echo "Done building!"
+            dotnet test "./repos/ContinuouslyRunningConsole/ContinuouslyRunningConsole.csproj"
+            echo "Done testing!"

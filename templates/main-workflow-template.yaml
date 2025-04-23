@@ -1,0 +1,84 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Workflow
+metadata:
+  generateName: repo-type-dispatcher- # Argo will add a random suffix
+spec:
+  entrypoint: dispatcher
+  arguments:
+    parameters:
+      - name: repo-name # Input parameter for the OWNER/REPO string
+        value: "octocat/Spoon-Knife" # Default value, override when submitting
+
+  # IMPORTANT: Define the Service Account for the 'argo submit' step
+  # This service account needs RBAC permissions to create workflows.
+  serviceAccountName: argo-submitter-sa # Replace with your actual service account name
+
+  templates:
+    - name: dispatcher
+      steps:
+        - - name: detect-project-type
+            template: run-detection-script
+            arguments:
+              parameters:
+                - name: repo-name
+                  value: "{{workflow.parameters.repo-name}}" # Pass workflow input to the step
+
+        - - name: submit-target-workflow
+            template: submit-argo-workflow
+            arguments:
+              parameters:
+                - name: derived-template-name # Get output from previous step
+                  value: "{{steps.detect-project-type.outputs.result}}"
+                - name: repo-name # Pass original repo name to the submit step
+                  value: "{{workflow.parameters.repo-name}}"
+            # Optional: Only run if detection was successful and type is not unknown
+            # when: "{{steps.detect-project-type.outputs.result}} != 'unknown-project-type-handler'"
+
+    # Template to run the detection bash script
+    - name: run-detection-script
+      inputs:
+        parameters:
+          - name: repo-name
+      outputs:
+        result: "{{steps.script.outputs.result}}" # Capture stdout of the script step below
+      container:
+        image: alpine/k8s:1.28.2 # Image with curl, bash. Need jq. Consider building custom image or using multi-step install.
+        command: ["/bin/sh", "-c"] # Use sh to run install + script
+        args:
+          - |
+            apk add --no-cache jq bash && # Install jq and bash (alpine default sh might differ slightly)
+            bash /scripts/detect_repo_type.sh # Execute the main script logic
+        env:
+          - name: REPO_FULL_NAME # Pass repo name as env var to the script
+            value: "{{inputs.parameters.repo-name}}"
+          - name: GITHUB_TOKEN # Mount the token from the secret
+            valueFrom:
+              secretKeyRef:
+                name: github-token # <-- Name of your K8s secret
+                key: token # <-- Key within the secret containing the PAT
+        volumeMounts:
+          - name: scripts
+            mountPath: /scripts
+      volumes:
+        - name: scripts
+          configMap:
+            name: detection-script-cm # Assumes script is in a ConfigMap
+
+    # Template to submit the target WorkflowTemplate using 'argo submit'
+    - name: submit-argo-workflow
+      inputs:
+        parameters:
+          - name: derived-template-name
+          - name: repo-name
+      container:
+        image: argoproj/argocli:v3.5.4 # Use an appropriate version of the Argo CLI image
+        command: [argo]
+        args:
+          - submit
+          - --workflowtemplate # Submit based on a WorkflowTemplate
+          - "{{inputs.parameters.derived-template-name}}"
+          - -p # Pass parameters to the target workflow template
+          - repo-full-name={{inputs.parameters.repo-name}}
+          # Add other parameters needed by your target templates:
+          # - -p commit-sha=abc1234
+          # - -p target-branch=main

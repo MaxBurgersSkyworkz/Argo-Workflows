@@ -7,11 +7,13 @@ spec:
   arguments:
     parameters:
       - name: repo-name # Input parameter for the OWNER/REPO string
-        value: "octocat/Spoon-Knife" # Default value, override when submitting
+        value: ""
+      - name: target-branch
+        value: ""
 
   # IMPORTANT: Define the Service Account for the 'argo submit' step
   # This service account needs RBAC permissions to create workflows.
-  serviceAccountName: argo-submitter-sa # Replace with your actual service account name
+  serviceAccountName: argo-workflows-server # Replace with your actual service account name
 
   templates:
     - name: dispatcher
@@ -31,8 +33,10 @@ spec:
                   value: "{{steps.detect-project-type.outputs.result}}"
                 - name: repo-name # Pass original repo name to the submit step
                   value: "{{workflow.parameters.repo-name}}"
+                - name: target-branch
+                  value: "{{workflow.parameters.target-branch}}"
             # Optional: Only run if detection was successful and type is not unknown
-            # when: "{{steps.detect-project-type.outputs.result}} != 'unknown-project-type-handler'"
+            when: "{{steps.detect-project-type.outputs.result}} != 'unknown-project-type-handler'"
 
     # Template to run the detection bash script
     - name: run-detection-script
@@ -46,8 +50,8 @@ spec:
         command: ["/bin/sh", "-c"] # Use sh to run install + script
         args:
           - |
-            apk add --no-cache jq bash && # Install jq and bash (alpine default sh might differ slightly)
-            bash /scripts/detect_repo_type.sh # Execute the main script logic
+            apk add --no-cache jq bash &&
+            bash /scripts/detect_repo_type.sh
         env:
           - name: REPO_FULL_NAME # Pass repo name as env var to the script
             value: "{{inputs.parameters.repo-name}}"
@@ -55,7 +59,7 @@ spec:
             valueFrom:
               secretKeyRef:
                 name: github-token # <-- Name of your K8s secret
-                key: token # <-- Key within the secret containing the PAT
+                key: token # <-- Key within the secret containing the gsh token
         volumeMounts:
           - name: scripts
             mountPath: /scripts
@@ -70,6 +74,7 @@ spec:
         parameters:
           - name: derived-template-name
           - name: repo-name
+          - name: targt-branch
       container:
         image: argoproj/argocli:v3.5.4 # Use an appropriate version of the Argo CLI image
         command: [argo]
@@ -77,8 +82,6 @@ spec:
           - submit
           - --workflowtemplate # Submit based on a WorkflowTemplate
           - "{{inputs.parameters.derived-template-name}}"
-          - -p # Pass parameters to the target workflow template
-          - repo-full-name={{inputs.parameters.repo-name}}
-          # Add other parameters needed by your target templates:
-          # - -p commit-sha=abc1234
-          # - -p target-branch=main
+          - -p
+          - repo-name={{inputs.parameters.repo-name}}
+          - target-branch={{inputs.parameters.target-branch}}

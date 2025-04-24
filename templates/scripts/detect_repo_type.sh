@@ -129,9 +129,9 @@ case "$project_type" in
     "nodejs")
         output_name="nodejs-workflow-template" ;;
     "scala")
-        output_name="scala-build-runner" ;; # Example name
+        output_name="scala-workflow-template" ;;
     "jfrog")
-        output_name="jfrog-pipeline-trigger" ;; # Example name
+        output_name="jfrog-workflow-template" ;;
     "unknown")
         output_name="unknown-project-type-handler" ;; # Handler for unknown
     *)

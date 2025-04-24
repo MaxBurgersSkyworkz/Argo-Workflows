@@ -4,6 +4,12 @@ metadata:
   name: dotnet-build-test
 spec:
   entrypoint: build-and-test
+  arguments:
+    parameters:
+      - name: repo-name
+        value: ""
+      - name: target-branch
+        value: ""
   templates:
     - name: build-and-test
       steps:
@@ -15,7 +21,7 @@ spec:
         command: [sh, -c]
         args:
           - |
-            git clone https://github.com/MaxBurgersSkyworkz/ContinuouslyRunningConsole.git ./repos
+            git clone -b {{inputs.parameters.target-branch}} https://github.com/{{inputs.parameters.repo-name}} ./repos
             ls -a
             nuget locals all -clear
             dotnet restore "./repos/ContinuouslyRunningConsole/ContinuouslyRunningConsole.csproj"

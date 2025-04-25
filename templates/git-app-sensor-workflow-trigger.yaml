@@ -12,7 +12,7 @@ spec:
       eventName: push
   triggers:
     - template:
-        name: run-hello-world
+        name: main-workflow-template
         argoWorkflow:
           group: argoproj.io
           version: v1alpha1
@@ -23,7 +23,7 @@ spec:
               apiVersion: argoproj.io/v1alpha1
               kind: Workflow
               metadata:
-                generateName: hello-world-triggered-
+                generateName: main-workflow-trigged-
                 namespace: argo
               spec:
                 serviceAccountName: argo-platform-sa

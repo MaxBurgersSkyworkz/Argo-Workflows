@@ -28,12 +28,11 @@ spec:
               spec:
                 serviceAccountName: argo-platform-sa
                 workflowTemplateRef:
-                  name: git-pull-build
+                  name: main-workflow-template
                 arguments:
                   parameters:
-                    - name: repo_full_name
-                    - name: ref
-                    - name: repo_name
+                    - name: repo-name
+                    - name: target-branch
           parameters:
             - src:
                 dependencyName: github-push-dep
@@ -41,9 +40,5 @@ spec:
               dest: spec.arguments.parameters.0.value
             - src:
                 dependencyName: github-push-dep
-                dataKey: body.head_commit.id
+                dataKey: body.ref
               dest: spec.arguments.parameters.1.value
-            - src:
-                dependencyName: github-push-dep
-                dataKey: body.repository.name
-              dest: spec.arguments.parameters.2.value

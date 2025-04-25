@@ -1,7 +1,7 @@
 apiVersion: argoproj.io/v1alpha1
-kind: Workflow
+kind: WorkflowTemplate
 metadata:
-  generateName: repo-type-dispatcher- # Argo will add a random suffix
+  name: main-workflow-template
 spec:
   entrypoint: dispatcher
   arguments:
@@ -10,11 +10,6 @@ spec:
         value: ""
       - name: target-branch
         value: ""
-
-  # IMPORTANT: Define the Service Account for the 'argo submit' step
-  # This service account needs RBAC permissions to create workflows.
-  serviceAccountName: argo-workflows-server # Replace with your actual service account name
-
   templates:
     - name: dispatcher
       steps:

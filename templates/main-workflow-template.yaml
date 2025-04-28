@@ -50,6 +50,8 @@ spec:
         env:
           - name: REPO_FULL_NAME # Pass repo name as env var to the script
             value: "{{inputs.parameters.repo-name}}"
+          - name: GIT_REF
+            value: "{{inputs.parameters.target-branch}}"
           - name: GITHUB_TOKEN # Mount the token from the secret
             valueFrom:
               secretKeyRef:

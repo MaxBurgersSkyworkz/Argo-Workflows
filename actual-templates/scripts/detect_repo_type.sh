@@ -21,8 +21,9 @@ function check_prereqs() {
 
 function detect_project_type() {
     local repo_full_name="$1"
+    local git_ref="${GIT_REF}"
     local detected_type="unknown"
-    local api_url="https://api.github.com/repos/${repo_full_name}/contents/"
+    local api_url="https://api.github.com/repos/${repo_full_name}/contents/?ref=${git_ref}"
     local curl_opts=("-sSLf") # Silent, follow redirects, show errors, FAIL on >= 400
 
     # Add Authorization header if token is set

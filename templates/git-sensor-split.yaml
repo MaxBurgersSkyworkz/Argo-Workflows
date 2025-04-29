@@ -1,0 +1,90 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Sensor
+metadata:
+  name: github-push-sensor-template-trigger
+  namespace: argo-events
+spec:
+  template:
+    serviceAccountName: argo-events-sa
+  dependencies:
+    - name: github-push-dep
+      eventSourceName: github
+      eventName: push
+    # - name: github-pr-dep
+    #   eventSourceName: github
+    #   eventName: pull_request
+  triggers:
+    - template:
+        name: argo-wf-template-trigger-push
+        argoWorkflow:
+          group: argoproj.io
+          version: v1alpha1
+          resource: workflows
+          operation: submit
+          source:
+            resource:
+              apiVersion: argoproj.io/v1alpha1
+              kind: Workflow
+              metadata:
+                generateName: git-push-triggered-
+                namespace: argo
+              spec:
+                serviceAccountName: argo-platform-sa
+                workflowTemplateRef:
+                  name: git-pull-build
+                arguments:
+                  parameters:
+                    - name: repo_full_name
+                    - name: commit_sha
+                    - name: ref
+          parameters:
+            - src:
+                dependencyName: github-push-dep
+                dataKey: body.repository.full_name
+              dest: spec.arguments.parameters.0.value # repo_full_name
+            - src:
+                dependencyName: github-push-dep
+                dataKey: body.head_commit.id
+              dest: spec.arguments.parameters.1.value # commit_sha (push)
+            - src:
+                dependencyName: github-push-dep
+                dataKey: body.ref
+              dest: spec.arguments.parameters.2.value # ref (push)
+    #   when: "dependencies.github-push-dep.status.phase == Succeeded"
+    # - template:
+    #     name: argo-wf-template-trigger-pr
+    #     argoWorkflow:
+    #       group: argoproj.io
+    #       version: v1alpha1
+    #       resource: workflows
+    #       operation: submit
+    #       source:
+    #         resource:
+    #           apiVersion: argoproj.io/v1alpha1
+    #           kind: Workflow
+    #           metadata:
+    #             generateName: git-pr-triggered-
+    #             namespace: argo
+    #           spec:
+    #             serviceAccountName: argo-platform-sa
+    #             workflowTemplateRef:
+    #               name: git-pull-build
+    #             arguments:
+    #               parameters:
+    #                 - name: repo_full_name
+    #                 - name: commit_sha
+    #                 - name: ref
+    #   parameters:
+    #     - src:
+    #         dependencyName: github-pr-dep
+    #         dataKey: body.repository.full_name
+    #       dest: spec.arguments.parameters.0.value # repo_full_name
+    #     - src:
+    #         dependencyName: github-pr-dep
+    #         dataKey: body.pull_request.head.sha
+    #       dest: spec.arguments.parameters.1.value # commit_sha (PR)
+    #     - src:
+    #         dependencyName: github-pr-dep
+    #         dataKey: body.pull_request.head.ref
+    #       dest: spec.arguments.parameters.2.value # ref (PR)
+    #   # when: "dependencies.github-pr-dep.status.phase == Succeeded"

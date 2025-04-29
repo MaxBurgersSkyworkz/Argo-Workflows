@@ -1,0 +1,110 @@
+apiVersion: argoproj.io/v1alpha1
+kind: WorkflowTemplate
+metadata:
+  name: git-pull-build
+  namespace: argo
+spec:
+  entrypoint: setup-git
+  arguments:
+    parameters:
+    - name: repo_full_name
+      value: ""
+    - name: commit_sha
+      value: ""
+    - name: ref
+      value: ""
+
+  templates:
+  - name: setup-git
+    dag:
+      tasks:
+        - name: check-repo
+          template: check-repo
+          arguments:
+            parameters:
+              - name: ref
+                value: "{{workflow.parameters.ref}}"
+
+        - name: report-status
+          template: report-status
+          arguments:
+            parameters:
+              - name: repo_full_name
+                value: "{{workflow.parameters.repo_full_name}}"
+              - name: commit_sha
+                value: "{{workflow.parameters.commit_sha}}"
+
+  - name: check-repo
+    inputs:
+        parameters:
+          - name: ref
+        artifacts:
+          - name: repo
+            path: /src
+            git: 
+              repo: https://github.com/{{workflow.parameters.repo_full_name}}.git
+              revision: "{{inputs.parameters.ref}}"
+              usernameSecret:
+                  name: github-secret
+                  key: username
+              passwordSecret:
+                name: github-secret
+                key: token
+    container:
+      image: golang:1.10
+      command: ["sh", "-c"]
+      args: ["git status && ls"]
+      workingDir: /src
+
+  - name: report-status
+    inputs:
+      parameters:
+        - name: repo_full_name
+        - name: commit_sha
+    container:
+      image: alpine/k8s:1.28.2
+      command: ["/bin/sh", "-c"]
+      args:
+      - |
+        REPO_FULL_NAME="$REPO_FULL_NAME"
+        COMMIT_SHA="$COMMIT_SHA"
+        GITHUB_TOKEN="$GITHUB_TOKEN"
+        STATUS="$STATUS"
+        CONTEXT="argo-workflow/check-repo"
+        DESCRIPTION="Argo Workflow: Check completed"
+
+        if [[ -z "$GITHUB_TOKEN" ]]; then
+          echo "Warning: GITHUB_TOKEN environment variable not set. Skipping status update." >&2
+          exit 0
+        fi
+
+        GITHUB_API_URL="https://api.github.com/repos/$REPO_FULL_NAME/statuses/$COMMIT_SHA"
+
+        curl -X POST \
+          -H "Accept: application/vnd.github+json" \
+          -H "Authorization: token $GITHUB_TOKEN" \
+          -d '{
+            "state": "'"$STATUS"'",
+            "description": "'"$DESCRIPTION"'",
+            "context": "'"$CONTEXT"'"
+          }' \
+          "$GITHUB_API_URL"
+
+        if [[ $? -ne 0 ]]; then
+          echo "Error: Failed to set commit status." >&2
+          exit 1
+        else
+          echo "Successfully set commit status '$STATUS' for commit '$COMMIT_SHA'." >&2
+        fi
+      env:
+        - name: REPO_FULL_NAME
+          value: "{{inputs.parameters.repo_full_name}}"
+        - name: COMMIT_SHA
+          value: "{{inputs.parameters.commit_sha}}"
+        - name: GITHUB_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: github-secret
+              key: token
+        - name: STATUS
+          value: "pending"

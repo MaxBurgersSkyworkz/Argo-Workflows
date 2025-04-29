@@ -1,0 +1,91 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ClusterWorkflowTemplate
+metadata:
+  name: dotnet-restore-build-test-submittable
+spec:
+  entrypoint: restore-build-test
+  arguments:
+    parameters:
+      - name: dotnet-project-entry-point-path
+        value: ""
+      - name: repo-name
+        value: ""
+  templates:
+    - name: restore-build-test
+      steps:
+        - - name: extract-version-script
+            template: extract-version-script-template
+            arguments:
+              parameters:
+                - name: csproj-s3-key
+                  value: "{{workflow.parameters.dotnet-project-entry-point-path}}"
+        - - name: restore-build-test
+            template: restore-build-test-template
+            arguments:
+              parameters:
+                - name: dotnet-version
+                  value: "{{steps.extract-dotnet-version.outputs.parameters.version}}"
+                - name: repo-name
+                  value: "{{workflow.parameters.repo-name}}"
+                - name: entry-point
+                  value: "{{workflow.parameters.dotnet-project-entry-point-path}}"
+
+    - name: extract-version-script-template
+      inputs:
+        parameters:
+          - name: csproj-s3-key # Receives the S3 key
+        artifacts:
+          # Define the input artifact using the S3 key parameter
+          - name: csproj-input
+            path: "/src" # Path inside this specific container
+            s3:
+              # Use the input parameter to specify the key in the bucket
+              key: "{{inputs.parameters.csproj-s3-key}}"
+              # Bucket name comes from the configured artifactRepository
+      outputs:
+        parameters:
+          - name: version
+            valueFrom:
+              path: /tmp/version.txt # Argo reads the output from this file
+      # Using a simple alpine image with shell tools
+      script:
+        image: alpine:latest
+        command: [sh]
+        source: |
+          #!/bin/sh
+          set -eo pipefail
+
+          # Same extraction logic as before, file is now at /src/{{inputs.parameters.csproj-s3-key}}
+          version=$(grep '<TargetFramework>net' /src/{{inputs.parameters.csproj-s3-key}} | sed -n 's:.*<TargetFramework>net\([^<]*\)</TargetFramework>.*:\1:p' | head -n 1)
+
+          if [ -z "$version" ]; then
+            echo "Error: Could not extract .NET version from S3 artifact key {{inputs.parameters.csproj-s3-key}}" >&2
+            exit 1
+          fi
+
+          echo "Extracted version: $version"
+          echo -n "$version" > /tmp/version.txt
+
+    - name: restore-build-test-template
+      inputs:
+        parameters:
+          - name: dotnet-version
+            value: "8.0"
+          - name: repo-name
+          - name: entry-point
+        artifacts:
+          - name: dotnet-artifact
+            path: /src
+            s3:
+              key: "{{inputs.parameters.repo-name}}"
+      container:
+        image: "mcr.microsoft.com/dotnet/sdk:{{inputs.parameters.dotnet-version}}"
+        command: [sh, -c]
+        args:
+          - |
+            dotnet restore "./src/{{inputs.parameters.entry-point}}"
+            echo "Done restoring!"
+            dotnet build "./src/{{inputs.parameters.entry-point}}"
+            echo "Done building!"
+            dotnet test "./src/{{inputs.parameters.entry-point}}"
+            echo "Done testing!"

@@ -6,7 +6,7 @@ metadata:
 spec:
   project: default
   source:
-    path: templates
+    path: actual-templates
     repoURL: https://github.com/MaxBurgersSkyworkz/Argo-Workflows.git
     targetRevision: HEAD
     directory:
